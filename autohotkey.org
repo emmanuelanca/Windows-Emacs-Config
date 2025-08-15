@@ -1,0 +1,65 @@
+#+title: My AutoHotkey Scripts
+#+author: Emmanuel Anca
+#+property: header-args :results none :tangle-mode (identity #o444)
+
+* Main
+#+name: main-tangle
+#+begin_src emacs-lisp
+  (setq-local expand-module-file
+  	    (lambda (script)
+  	      (let ((directory (concat (getenv "USERPROFILE") "/utils/autohotkey/")))
+  		(concat directory script ".ahk"))))
+#+end_src
+#+begin_src text :tangle (progn (org-sbe "main-tangle") (message ""))
+#+end_src
+#+begin_src prog :tangle (funcall expand-module-file "main")
+  #Requires AutoHotkey v2.0+
+  #Include "caps.ahk"
+  #Include "hotstrings-spanish.ahk"
+#+end_src
+
+* Scripts
+** Caps key
+#+begin_src prog :tangle (funcall expand-module-file "caps")
+  #Requires AutoHotkey v2.0+
+  CapsLock:: {
+      timer := A_TickCount
+      KeyWait("CapsLock")
+      if ((A_TickCount - timer) < 150)
+          Send("{Escape}")
+  }
+
+  Escape::CapsLock
+
+  #HotIf GetKeyState("CapsLock", "P")
+  Esc::Reload()
+  h::Send("{Left}")
+  j::Send("{Down}")
+  k::Send("{Up}")
+  l::Send("{Right}")
+  b::WinKill("A")
+  #HotIf
+#+end_src
+
+* Hotstrings
+** Spanish
+#+begin_src prog :tangle (funcall expand-module-file "hotstrings-spanish")
+  #Requires AutoHotkey v2.0+
+  :*?:;a::á
+  :*?:;e::é
+  :*?:;i::í
+  :*?:;o::ó
+  :*?:;u::ú
+
+  :*?:;A::Á
+  :*?:;E::É
+  :*?:;I::Í
+  :*?:;O::Ó
+  :*?:;U::Ú
+
+  :*?:;n::ñ
+  :*?:;N::Ñ
+
+  :*?:;;u::ü
+  :*?:;;U::Ü
+#+end_src

@@ -1,0 +1,166 @@
+#+title: Emacs Configuration
+#+author: Emmanuel Anca
+#+property: header-args :results none :tangle-mode (identity #o444)
+
+* Main
+
+** Tangle setup
+
+#+name: main-tangle
+#+begin_src emacs-lisp  
+  (setq-local expand-module-file
+    (lambda (module)
+      (let ((directory user-emacs-directory))
+        (concat directory module ".el"))))
+#+end_src
+#+begin_src text :tangle (progn (org-sbe "main-tangle") (message ""))
+#+end_src
+
+* Init
+
+#+begin_src emacs-lisp :tangle (funcall expand-module-file "init") :tangle-mode (identity #o777)
+  (defun my/switch-to-other-buffer ()
+    (interactive)
+    (switch-to-buffer (other-buffer)))
+
+  (require 'package)
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+    			 ("gnu"   . "https://elpa.gnu.org/packages/")))
+  (package-initialize)
+  (unless package-archive-contents)
+  (require 'use-package)
+
+  (use-package emacs
+    :ensure nil
+    :config
+    (set-language-environment 'utf-8)
+    (set-default-coding-systems 'utf-8)
+    (set-keyboard-coding-system 'utf-8-unix)
+    (set-terminal-coding-system 'utf-8-unix)
+
+    (setq backup-directory-alist
+  	`((".*" . ,temporary-file-directory)))
+    (setq auto-save-file-name-transforms
+  	`((".*" ,temporary-file-directory t)))
+    (setq lock-file-name-transforms
+  	`((".*" ,temporary-file-directory t)))
+
+    (set-face-attribute 'default nil :height 150 :family "Source Code Pro")
+    (load-theme 'modus-operandi t)
+    (menu-bar-mode -1)
+    (scroll-bar-mode -1)
+    (tool-bar-mode -1)
+    (delete-selection-mode 1)
+    (global-hl-line-mode t)
+    (setq disabled-command-function nil)
+    (setq initial-scratch-message nil)
+    (setq inhibit-startup-screen t)
+    (setq-default truncate-lines t)
+    (setq-default truncate-partial-width-windows nil)
+
+    (dolist (module '("dired" "markdown" "emms" "ivy" "magit" "org" "powershell" "r"))
+      (load (concat user-emacs-directory module)))
+
+    :bind
+    (("<f7>"   . delete-other-windows)
+     ("M-<f7>" . kill-buffer-and-window)
+     ("M-<f5>" . list-buffers)
+     ("<f6>"   . other-window)
+     ("<f5>"   . my/switch-to-other-buffer)))
+#+end_src
+
+* Modules
+
+** Dired
+
+#+begin_src emacs-lisp :tangle (funcall expand-module-file "dired")
+  (defun my/unix-to-windows-path (path)
+    (replace-regexp-in-string "/" "\\" path t t))
+
+  (defun my/dired-open-file ()
+      (interactive)
+      (let* ((file (dired-get-file-for-visit))
+      	 (ext (file-name-extension file nil)))
+        (cond
+         ((member ext '("pdf" "epub"))
+          (start-process "ebook-open" nil "ebook-viewer" file))
+         ((string-equal ext "Rmd")
+          (start-process "rstudio-open" nil "rstudio" file))
+         ((string-equal ext "exe")
+          (start-process "exe-run" nil "cmd" "/c" file))
+         ((string-equal ext "7z rar zip tar tar.gz iso")
+          (start-process "7z-run" nil "7z" file))
+         (t
+          (dired-find-alternate-file)))))
+
+    (defun my/dired-open-file-2 ()
+      (interactive)
+      (let* ((file (dired-get-file-for-visit))
+      	 (ext (file-name-extension file nil)))
+        (cond
+         ((member ext '("ahk"))
+          (start-process "autohotkey-run" nil "autohotkey" file))
+         (t
+          (dired-find-file)))))
+
+  (defun my/dired-directory-explorer ()
+    (interactive)
+    (start-process "explorer-open" nil "explorer"
+    		 (my/unix-to-windows-path default-directory)))
+
+  (defun my/dired-directory-terminal ()
+    (interactive)
+    (start-process "terminal-open" nil "wt" "--startingDirectory"
+    		 (my/unix-to-windows-path default-directory)))
+
+  (defun my/dired--hook ()
+    (dired-hide-details-mode)
+    (let ((filter-all "^\\..[^\\.]")
+    	(filter-directory
+    	 (cond
+    	  ((string= (format "c:/Users/%s/" user-login-name) default-directory)
+    	   (mapconcat 'identity
+    		      '("appdata"
+    			"ntuser\\.")
+    		      "\\|")))))
+      (setq-local dired-omit-files
+    		(concat filter-all
+    			(when filter-directory
+    			  (concat "\\|" filter-directory)))))
+    (dired-omit-mode))
+
+  (use-package dired
+    :ensure nil
+    :config
+    (setq insert-directory-program "ls.exe")
+    (setq locate-command "es.exe")
+    
+    (add-hook 'dired-mode-hook 'my/dired--hook)
+    
+    :bind
+    (:map dired-mode-map
+    	(("M-<f4>"   . my/dired-directory-explorer)
+    	 ("<f4>"     . my/dired-directory-terminal)
+    	 ("<return>" . my/dired-open-file))))
+#+end_src
+
+** Org
+
+#+begin_src emacs-lisp :tangle (funcall expand-module-file "org")
+  (use-package org
+    :ensure nil
+    :config
+    (setq org-confirm-babel-evaluate nil)
+        
+    :bind
+    (:map org-mode-map
+      	(("<f9>"  . outline-next-visible-heading)
+      	 ("<f10>" . outline-previous-visible-heading))))
+#+end_src
+
+** PowerShell
+
+#+begin_src emacs-lisp :tangle (funcall expand-module-file "powershell")
+  (use-package powershell
+    :ensure t)
+#+end_src
