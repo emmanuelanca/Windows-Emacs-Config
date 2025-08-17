@@ -77,32 +77,6 @@
   (defun my/unix-to-windows-path (path)
     (replace-regexp-in-string "/" "\\" path t t))
 
-  (defun my/dired-open-file ()
-      (interactive)
-      (let* ((file (dired-get-file-for-visit))
-      	 (ext (file-name-extension file nil)))
-        (cond
-         ((member ext '("pdf" "epub"))
-          (start-process "ebook-open" nil "ebook-viewer" file))
-         ((string-equal ext "Rmd")
-          (start-process "rstudio-open" nil "rstudio" file))
-         ((string-equal ext "exe")
-          (start-process "exe-run" nil "cmd" "/c" file))
-         ((string-equal ext "7z rar zip tar tar.gz iso")
-          (start-process "7z-run" nil "7z" file))
-         (t
-          (dired-find-alternate-file)))))
-
-    (defun my/dired-open-file-2 ()
-      (interactive)
-      (let* ((file (dired-get-file-for-visit))
-      	 (ext (file-name-extension file nil)))
-        (cond
-         ((member ext '("ahk"))
-          (start-process "autohotkey-run" nil "autohotkey" file))
-         (t
-          (dired-find-file)))))
-
   (defun my/dired-directory-explorer ()
     (interactive)
     (start-process "explorer-open" nil "explorer"
